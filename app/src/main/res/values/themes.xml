@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme — will be overridden by Compose MaterialTheme -->
+    <style name="Theme.Saathi" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Saathi.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#FF6750A4</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Saathi</item>
+    </style>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Saathi</string>
+    <string name="scan_medicine">Dawaai Dekhein</string>
+    <string name="check_document">Kagaz Jaanch</string>
+    <string name="voice_guide">Saathi se Puchein</string>
+
+    <!-- Ruko Mode -->
+    <string name="ruko_title">⚠️ RUKO! Khatra Hai!</string>
+    <string name="ruko_message">Saathi ne yeh document mein dhokha dhadi ke nishaan dekhe hain.\nKoi bhi paise mat bhejiye — agle 30 minute tak intezaar kariye.</string>
+    <string name="ruko_whatsapp_msg">⚠️ [Saathi Alert] Aapke ghar mein ek shandaar suspicious government notice aa raha hai. Abhi call karo!</string>
+    <string name="ruko_dismiss_hint">Bahar jaane ke liye "SAATHI" type karein</string>
+
+    <!-- Medicine Scanner -->
+    <string name="scan_strip_prompt">Dawaai ka patta camera ke saamne rakhiye</string>
+    <string name="duplicate_pill_title">🔴 Ek Hi Namak!</string>
+    <string name="duplicate_pill_msg">Yeh aur aapki pehli dawaai mein ek hi cheez hai: %1$s\nDono saath mat lijiye!</string>
+
+    <!-- Chemist Parchi -->
+    <string name="parchi_title">📋 CHEMIST PARCHI</string>
+    <string name="parchi_ask">Bhaiya, yeh dena:</string>
+    <string name="parchi_savings">Bachat: ₹%1$s per patta</string>
+    <string name="parchi_powered">Saathi App se</string>
+    <string name="parchi_share">Parchi Share Karein</string>
+
+    <!-- Teach-Back Steps -->
+    <string name="step_warm_open">Namaste! Yeh kaun si cheez hai aapke haath mein?</string>
+    <string name="step_context">Doctor ne inhe kis cheez ke liye diya?</string>
+    <string name="step_teach_back">Achha, toh yeh kab leni hai?</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Ghar</string>
+    <string name="nav_medicine">Dawaai</string>
+    <string name="nav_document">Kagaz</string>
+    <string name="nav_guide">Saathi</string>
+</resources>
