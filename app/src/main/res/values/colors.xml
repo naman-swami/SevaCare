@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colors from official Saathi logo -->
+    <color name="ic_launcher_background">#FBF6EC</color>
+    <color name="saathi_teal_primary">#0E5C63</color>
+    <color name="saathi_teal_dark">#08383C</color>
+    <color name="saathi_amber_accent">#F3A53F</color>
+    <color name="saathi_cream_bg">#FBF6EC</color>
+</resources>

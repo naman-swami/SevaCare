@@ -13,39 +13,41 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val SaathiLightColors = lightColorScheme(
-    primary = SaathiPurple40,
+    primary = SaathiTealPrimary,
     onPrimary = Color.White,
-    primaryContainer = SaathiPurple80,
-    onPrimaryContainer = Color(0xFF21005D),
-    secondary = SaathiOrange40,
-    onSecondary = Color.White,
-    secondaryContainer = SaathiOrange80,
-    onSecondaryContainer = SaathiOrange40,
+    primaryContainer = SaathiTealContainer,
+    onPrimaryContainer = SaathiOnTealContainer,
+    secondary = SaathiAmberAccent,
+    onSecondary = Color(0xFF2C1600),
+    secondaryContainer = SaathiAmberContainer,
+    onSecondaryContainer = SaathiOnAmberContainer,
     error = RukoRed,
     onError = Color.White,
     errorContainer = RukoRedContainer,
     onErrorContainer = RukoOnRedContainer,
-    background = WarmWhite,
-    onBackground = Color(0xFF1C1B1F),
-    surface = WarmSurface,
-    onSurface = Color(0xFF1C1B1F),
-    surfaceVariant = Color(0xFFE7E0EC),
-    onSurfaceVariant = Color(0xFF49454F),
+    background = SaathiCreamBg,
+    onBackground = Color(0xFF191C1D),
+    surface = SaathiSurface,
+    onSurface = Color(0xFF191C1D),
+    surfaceVariant = SaathiSurfaceVariant,
+    onSurfaceVariant = Color(0xFF40484A),
 )
 
 private val SaathiDarkColors = darkColorScheme(
-    primary = SaathiPurple80,
-    onPrimary = Color(0xFF371E73),
-    primaryContainer = SaathiPurple40,
-    onPrimaryContainer = SaathiPurple80,
-    secondary = SaathiOrange80,
-    onSecondary = SaathiOrange40,
-    error = Color(0xFFF2B8B5),
-    onError = Color(0xFF601410),
-    background = Color(0xFF1C1B1F),
-    onBackground = Color(0xFFE6E1E5),
-    surface = Color(0xFF1C1B1F),
-    onSurface = Color(0xFFE6E1E5),
+    primary = SaathiTealLight,
+    onPrimary = Color(0xFF00363B),
+    primaryContainer = SaathiTealDark,
+    onPrimaryContainer = SaathiTealContainer,
+    secondary = SaathiAmberAccent,
+    onSecondary = Color(0xFF452B00),
+    secondaryContainer = SaathiAmberDark,
+    onSecondaryContainer = SaathiAmberContainer,
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    background = Color(0xFF101415),
+    onBackground = Color(0xFFE1E3E4),
+    surface = Color(0xFF101415),
+    onSurface = Color(0xFFE1E3E4),
 )
 
 @Composable
@@ -60,7 +62,7 @@ fun SaathiTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
 

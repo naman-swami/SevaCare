@@ -3,14 +3,17 @@ package com.saathi.app.ui.medicine
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.net.Uri
 import android.speech.tts.TextToSpeech
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.saathi.app.R
 import com.saathi.app.data.model.Medicine
 import com.saathi.app.data.repository.SaathiRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -228,63 +231,81 @@ class MedicineViewModel(
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // Background
-        val bgPaint = Paint().apply { color = android.graphics.Color.parseColor("#FFF8E7") }
+        // Background — soft cream from logo
+        val bgPaint = Paint().apply { color = android.graphics.Color.parseColor("#FBF6EC") }
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-        // Border
+        // Border — brand teal from shield
         val borderPaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#6650A4")
+            color = android.graphics.Color.parseColor("#0E5C63")
             style = Paint.Style.STROKE
             strokeWidth = 8f
         }
-        canvas.drawRect(12f, 12f, (width - 12).toFloat(), (height - 12).toFloat(), borderPaint)
+        canvas.drawRect(14f, 14f, (width - 14).toFloat(), (height - 14).toFloat(), borderPaint)
 
+        val headerPaint = Paint().apply {
+            color = android.graphics.Color.parseColor("#0E5C63")
+            textSize = 42f
+            typeface = Typeface.DEFAULT_BOLD
+            isAntiAlias = true
+        }
         val boldPaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#1C1B1F")
-            textSize = 44f
+            color = android.graphics.Color.parseColor("#191C1D")
+            textSize = 40f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
         val bodyPaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#1C1B1F")
-            textSize = 36f
+            color = android.graphics.Color.parseColor("#191C1D")
+            textSize = 34f
             isAntiAlias = true
         }
         val greenPaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#386A20")
+            color = android.graphics.Color.parseColor("#2E6930")
             textSize = 40f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
         val subtlePaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#49454F")
+            color = android.graphics.Color.parseColor("#0E5C63")
             textSize = 28f
+            typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
 
+        // Draw logo on top right of parchi
+        try {
+            val logoBmp = BitmapFactory.decodeResource(context.resources, R.drawable.saathi_logo)
+            if (logoBmp != null) {
+                val destRect = Rect(width - 140, 26, width - 40, 126)
+                canvas.drawBitmap(logoBmp, null, destRect, null)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         // Draw text content
-        canvas.drawText("📋 CHEMIST PARCHI", 60f, 80f, boldPaint)
-        canvas.drawLine(40f, 100f, (width - 40).toFloat(), 100f, borderPaint.apply { strokeWidth = 2f })
+        canvas.drawText("📋 CHEMIST PARCHI", 50f, 80f, headerPaint)
+        canvas.drawLine(40f, 110f, (width - 160).toFloat(), 110f, borderPaint.apply { strokeWidth = 2f })
 
-        canvas.drawText("Bhaiya, yeh dena:", 60f, 155f, bodyPaint)
-        canvas.drawText("${medicine.janAushadhiName}", 60f, 215f, boldPaint)
+        canvas.drawText("Bhaiya, yeh dena:", 50f, 165f, bodyPaint)
+        canvas.drawText("${medicine.janAushadhiName}", 50f, 225f, boldPaint)
 
-        canvas.drawLine(40f, 240f, (width - 40).toFloat(), 240f, Paint().apply {
-            color = android.graphics.Color.parseColor("#E0E0E0")
-            strokeWidth = 1f
+        canvas.drawLine(40f, 255f, (width - 40).toFloat(), 255f, Paint().apply {
+            color = android.graphics.Color.parseColor("#D4EFF2")
+            strokeWidth = 2f
         })
 
-        canvas.drawText("Brand: ₹${medicine.brandMrp.toInt()} → Jan Aushadhi: ₹${medicine.janAushadhiMrp.toInt()}", 60f, 300f, bodyPaint)
-        canvas.drawText("Bachat: ₹${savings.toInt()} per patta", 60f, 360f, greenPaint)
+        canvas.drawText("Brand: ₹${medicine.brandMrp.toInt()} → Jan Aushadhi: ₹${medicine.janAushadhiMrp.toInt()}", 50f, 315f, bodyPaint)
+        canvas.drawText("Bachat: ₹${savings.toInt()} per patta", 50f, 375f, greenPaint)
 
-        canvas.drawLine(40f, 390f, (width - 40).toFloat(), 390f, Paint().apply {
-            color = android.graphics.Color.parseColor("#E0E0E0")
-            strokeWidth = 1f
+        canvas.drawLine(40f, 405f, (width - 40).toFloat(), 405f, Paint().apply {
+            color = android.graphics.Color.parseColor("#D4EFF2")
+            strokeWidth = 2f
         })
 
-        canvas.drawText("Jan Aushadhi Kendra se maangein", 60f, 440f, bodyPaint)
-        canvas.drawText("Powered by Saathi App", 60f, 495f, subtlePaint)
+        canvas.drawText("Jan Aushadhi Kendra se maangein", 50f, 455f, bodyPaint)
+        canvas.drawText("साथी • Powered by Saathi App", 50f, 500f, subtlePaint)
 
         // Save to cache and share
         try {
