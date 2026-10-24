@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base application theme — overridden by Compose SaathiTheme -->
-    <style name="Theme.Saathi" parent="android:Theme.Material.Light.NoActionBar" />
-    <style name="Theme.Saathi.Splash" parent="Theme.SplashScreen">
+    <!-- Base application theme — overridden by Compose SevaCareTheme -->
+    <style name="Theme.SevaCare" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.SevaCare.Splash" parent="Theme.SplashScreen">
         <!-- Soft cream background matching official logo -->
         <item name="windowSplashScreenBackground">#FBF6EC</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/saathi_logo</item>
-        <item name="postSplashScreenTheme">@style/Theme.Saathi</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/sevacare_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.SevaCare</item>
     </style>
 </resources>

@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.saathi.app"
+    namespace = "com.sevacare.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.saathi.app"
+        applicationId = "com.sevacare.app"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

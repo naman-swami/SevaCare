@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Saathi"
+rootProject.name = "SevaCare"
 include(":app")
