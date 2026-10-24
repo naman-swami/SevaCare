@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Teal Shield Background Fill -->
+    <path
+        android:name="shield_background"
+        android:fillColor="#0F6B5C"
+        android:pathData="M50,4 L96,20 V52 C96,78 76,94 50,96 C24,94 4,78 4,52 V20 Z" />
+
+    <!-- Shield Outline Border -->
+    <path
+        android:name="shield_outline"
+        android:strokeColor="#168E7B"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M50,4 L96,20 V52 C96,78 76,94 50,96 C24,94 4,78 4,52 V20 Z" />
+
+    <!-- Cream "S" Letter Monogram -->
+    <path
+        android:name="s_letter"
+        android:strokeColor="#FFF8EC"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M68,32 C60,24 40,24 36,34 C32,44 44,48 54,50 C66,53 74,58 72,68 C69,78 44,80 34,70" />
+
+    <!-- Saffron Tracer Dot at Tail of "S" -->
+    <path
+        android:name="s_tracer_dot"
+        android:fillColor="#F5A623"
+        android:pathData="M34,63 A7,7 0 1,1 33.99,63 Z" />
+</vector>

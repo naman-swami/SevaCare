@@ -17,7 +17,15 @@ interface MedicineDao {
         SELECT m.* FROM medicines m
         WHERE LOWER(m.brandName) LIKE '%' || LOWER(:query) || '%'
            OR LOWER(m.genericSalt) LIKE '%' || LOWER(:query) || '%'
-        LIMIT 10
+        ORDER BY 
+            CASE 
+                WHEN LOWER(m.brandName) LIKE LOWER(:query) || '%' THEN 0
+                WHEN LOWER(m.genericSalt) LIKE LOWER(:query) || '%' THEN 1
+                WHEN LOWER(m.brandName) LIKE '% ' || LOWER(:query) || '%' THEN 2
+                ELSE 3
+            END,
+            LOWER(m.brandName) ASC
+        LIMIT 15
     """)
     suspend fun searchMedicines(query: String): List<Medicine>
 

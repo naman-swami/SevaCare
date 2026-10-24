@@ -1,0 +1,89 @@
+{
+  "character": "Sparrow Mascot (\u0917\u094c\u0930\u0948\u092f\u093e \u0938\u093e\u0925\u0940)",
+  "project": "SevaCare Offline Companion",
+  "art_source": "doc/asset/IMG_20261021_210045.jpg_2K_20261023051959.jpg",
+  "engine": "Tripo3D OpenAPI v3",
+  "total_models": 8,
+  "models": [
+    {
+      "src_file": "cartoon chick 3d model.glb",
+      "target_file": "sparrow_character_highres.glb",
+      "name": "Sparrow Base High-Res Mesh",
+      "description": "Unrigged 16.9 MB high-polygon 3D cartoon sparrow character model created with Tripo3D v3.1 generative engine from authentic 2K concept art.",
+      "rig_type": "none",
+      "active_joints": 0,
+      "role": "Source reference mesh for offline 3D rendering and texture baking",
+      "size_mb": 16.18
+    },
+    {
+      "src_file": "cartoon chick 3d model.glb.glb",
+      "target_file": "sparrow_rigged_rest.glb",
+      "name": "Sparrow Auto-Rigged Rest (T-Pose)",
+      "description": "Auto-rigged base humanoid/avian armature with 42 joints, rest binding matrices, and vertex skinning weights.",
+      "rig_type": "biped/avian",
+      "active_joints": 42,
+      "role": "Foundational rig for dynamic skeletal animations across all 15 SevaCare mascot states",
+      "size_mb": 6.3
+    },
+    {
+      "src_file": "cartoon chick 3d model.glb (1).glb",
+      "target_file": "sparrow_anim_reach_point.glb",
+      "name": "Animation 1 \u2014 Reaching & Pointing (Wing Articulated)",
+      "description": "Extended wing gesture pointing toward on-screen elements (e.g. prescription scan button, Today's Path node).",
+      "rig_type": "biped/avian",
+      "active_joints": 46,
+      "role": "Mapped to MascotState.POINTING and MascotState.DEMONSTRATING",
+      "size_mb": 6.3
+    },
+    {
+      "src_file": "cartoon chick 3d model.glb (2).glb",
+      "target_file": "sparrow_anim_ground_walk.glb",
+      "name": "Animation 2 \u2014 Grounded Walking & Stride",
+      "description": "Balanced leg stride pose representing continuous care progress and routine adherence.",
+      "rig_type": "biped/avian",
+      "active_joints": 48,
+      "role": "Mapped to MascotState.DAILY_ROUTINE and Onboarding step progression",
+      "size_mb": 6.3
+    },
+    {
+      "src_file": "cartoon chick 3d model.glb (3).glb",
+      "target_file": "sparrow_anim_celebrate_jump.glb",
+      "name": "Animation 3 \u2014 Celebratory Hop & Wing Spread",
+      "description": "Dynamic uplifted wings and elevated posture celebrating successfully taken medicine doses or verified safe notices.",
+      "rig_type": "biped/avian",
+      "active_joints": 49,
+      "role": "Mapped to MascotState.GENTLE_SUCCESS",
+      "size_mb": 6.3
+    },
+    {
+      "src_file": "cartoon chick 3d model.glb (4).glb",
+      "target_file": "sparrow_anim_listen_tilt.glb",
+      "name": "Animation 4 \u2014 Attentive Listening & Head Tilt",
+      "description": "Focused receptive posture with tilted head and forward-leaning spine, waiting for senior voice input.",
+      "rig_type": "biped/avian",
+      "active_joints": 48,
+      "role": "Mapped to MascotState.LISTENING and MascotState.THINKING",
+      "size_mb": 6.3
+    },
+    {
+      "src_file": "cartoon chick 3d model.glb (5).glb",
+      "target_file": "sparrow_anim_wave_fly.glb",
+      "name": "Animation 5 \u2014 Welcoming Wave & Wing Flutter",
+      "description": "Welcoming greeting flutter with open wings and joyful facial posture to reassure elder on app startup.",
+      "rig_type": "biped/avian",
+      "active_joints": 49,
+      "role": "Mapped to MascotState.GREETING and App Launch Splash",
+      "size_mb": 6.3
+    },
+    {
+      "src_file": "cartoon chick 3d model.glb (6).glb",
+      "target_file": "sparrow_anim_alert_attentive.glb",
+      "name": "Animation 6 \u2014 Protective Stand & Safety Alert",
+      "description": "Firm upright protective posture with alert wings, guiding senior to pause during scam/urgent threat detection.",
+      "rig_type": "biped/avian",
+      "active_joints": 48,
+      "role": "Mapped to MascotState.CONCERNED, MascotState.REMINDER, and MascotState.HELP_NEEDED",
+      "size_mb": 6.3
+    }
+  ]
+}

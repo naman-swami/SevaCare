@@ -6,27 +6,36 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.saathi.app.data.ai.BrainResponse
+import com.saathi.app.data.ai.SevaCareBrain
 import com.saathi.app.data.repository.SaathiRepository
+import com.saathi.app.util.VoiceEngine
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.util.Locale
+import kotlin.random.Random
 
 /**
- * Voice Guide companion designed for Indian elderly users.
+ * Intelligent AI Care Companion Voice Guide ViewModel (The "Nervous System").
  *
- * SAFETY PRINCIPLE:
- * All responses are grounded in verified deterministic templates and local database rows.
- * No unconstrained generative AI is used for medical advice or legal guidance.
- * Speech rate is tuned to 0.82f for clear geriatric auditory comprehension.
+ * Implements:
+ * 1. Resilient SpeechRecognizer with automatic fallback (no offline-only crashes).
+ * 2. Continuous aliveness pulsing for VoiceOrb and FourBarVisualizer while listening.
+ * 3. Graceful handling of silence/timeout errors (codes 6 & 7) with polite prompts.
+ * 4. Grounded clinical guardrails via [SevaCareBrain].
  */
 class VoiceGuideViewModel(
     private val repository: SaathiRepository
 ) : ViewModel() {
+
+    private val brain = SevaCareBrain(repository)
+    private var voiceEngine: VoiceEngine? = null
 
     private val _isListening = MutableStateFlow(false)
     val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
@@ -34,144 +43,232 @@ class VoiceGuideViewModel(
     private val _spokenText = MutableStateFlow("")
     val spokenText: StateFlow<String> = _spokenText.asStateFlow()
 
-    private val _saathiResponse = MutableStateFlow<String>(
-        "Namaste Dadi ji / Baba ji! Main Saathi hoon. Mic dabayein aur kuch bhi poochein — dawaai ke baare mein ya kisi anjaan phone call ke baare mein."
+    private val _saathiResponse = MutableStateFlow(
+        "Welcome to SevaCare! Press the microphone button or ask any question about your medicine schedule, official notices, or suspicious calls."
     )
     val saathiResponse: StateFlow<String> = _saathiResponse.asStateFlow()
 
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
+    private val _audioLevel = MutableStateFlow(0f)
+    val audioLevel: StateFlow<Float> = _audioLevel.asStateFlow()
+
+    private val _showEmergencyDialer112 = MutableStateFlow(false)
+    val showEmergencyDialer112: StateFlow<Boolean> = _showEmergencyDialer112.asStateFlow()
+
+    private val _lastBrainResponse = MutableStateFlow<BrainResponse?>(null)
+    val lastBrainResponse: StateFlow<BrainResponse?> = _lastBrainResponse.asStateFlow()
+
     private var speechRecognizer: SpeechRecognizer? = null
-    private var tts: TextToSpeech? = null
+    private var isHindiLanguage: Boolean = true
+    private var pulseJob: Job? = null
+    private var lastContext: Context? = null
+
+    fun setLanguage(isHindi: Boolean) {
+        this.isHindiLanguage = isHindi
+    }
 
     fun initVoice(context: Context) {
-        // Initialize SpeechRecognizer
-        if (SpeechRecognizer.isRecognitionAvailable(context)) {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
-                setRecognitionListener(object : RecognitionListener {
-                    override fun onReadyForSpeech(params: Bundle?) { _isListening.value = true }
-                    override fun onBeginningOfSpeech() {}
-                    override fun onRmsChanged(rmsdB: Float) {}
-                    override fun onBufferReceived(buffer: ByteArray?) {}
-                    override fun onEndOfSpeech() { _isListening.value = false }
-                    override fun onError(error: Int) {
-                        _isListening.value = false
-                    }
-                    override fun onResults(results: Bundle?) {
-                        _isListening.value = false
-                        val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        val text = matches?.firstOrNull() ?: ""
-                        if (text.isNotBlank()) {
-                            _spokenText.value = text
-                            processUserQuery(text)
-                        }
-                    }
-                    override fun onPartialResults(partialResults: Bundle?) {}
-                    override fun onEvent(eventType: Int, params: Bundle?) {}
-                })
+        lastContext = context.applicationContext
+        voiceEngine = VoiceEngine.getInstance(context)
+
+        viewModelScope.launch {
+            voiceEngine?.isSpeaking?.collect { speaking ->
+                _isSpeaking.value = speaking
+                if (!speaking && !_isListening.value) {
+                    _audioLevel.value = 0f
+                }
             }
         }
 
-        // Initialize TextToSpeech
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                val hindiLocale = Locale("hi", "IN")
-                val res = tts?.setLanguage(hindiLocale)
-                if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    tts?.setLanguage(Locale.ENGLISH)
+        setupSpeechRecognizer(context)
+    }
+
+    private fun setupSpeechRecognizer(context: Context) {
+        try {
+            speechRecognizer?.destroy()
+            if (SpeechRecognizer.isRecognitionAvailable(context)) {
+                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
+                    setRecognitionListener(createListener(context))
                 }
-                tts?.setSpeechRate(0.82f) // Elderly-friendly cadence
-                tts?.setPitch(1.05f)
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun createListener(context: Context) = object : RecognitionListener {
+        override fun onReadyForSpeech(params: Bundle?) {
+            _isListening.value = true
+            startAlivenessPulse()
+        }
+
+        override fun onBeginningOfSpeech() {
+            stopAlivenessPulse()
+            _audioLevel.value = 0.5f
+        }
+
+        override fun onRmsChanged(rmsdB: Float) {
+            val level = (rmsdB / 10f).coerceIn(0.15f, 1.0f)
+            _audioLevel.value = level
+        }
+
+        override fun onBufferReceived(buffer: ByteArray?) {}
+
+        override fun onEndOfSpeech() {
+            stopAlivenessPulse()
+            _audioLevel.value = 0f
+        }
+
+        override fun onError(error: Int) {
+            stopAlivenessPulse()
+            when (error) {
+                SpeechRecognizer.ERROR_NO_MATCH,
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                    // Microphone heard silence; don't collapse UI instantly
+                    _spokenText.value = if (isHindiLanguage) "साथी सुन रहा है, कृपया बोलिए..." else "Listening... Please speak."
+                    _audioLevel.value = 0.2f
+                    viewModelScope.launch {
+                        delay(1200)
+                        if (_isListening.value) {
+                            try {
+                                startListeningInternal(context)
+                            } catch (_: Exception) {
+                                _isListening.value = false
+                                _audioLevel.value = 0f
+                            }
+                        }
+                    }
+                }
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
+                SpeechRecognizer.ERROR_CLIENT -> {
+                    // Transient client error; recreate recognizer
+                    setupSpeechRecognizer(context)
+                    _isListening.value = false
+                    _audioLevel.value = 0f
+                }
+                else -> {
+                    _isListening.value = false
+                    _audioLevel.value = 0f
+                }
             }
         }
+
+        override fun onResults(results: Bundle?) {
+            stopAlivenessPulse()
+            _isListening.value = false
+            _audioLevel.value = 0f
+            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            val text = matches?.firstOrNull() ?: ""
+            if (text.isNotBlank()) {
+                _spokenText.value = text
+                processUserQuery(text)
+            }
+        }
+
+        override fun onPartialResults(partialResults: Bundle?) {
+            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            val partial = matches?.firstOrNull() ?: ""
+            if (partial.isNotBlank()) {
+                _spokenText.value = partial
+                _audioLevel.value = 0.65f
+            }
+        }
+
+        override fun onEvent(eventType: Int, params: Bundle?) {}
+    }
+
+    private fun startAlivenessPulse() {
+        pulseJob?.cancel()
+        pulseJob = viewModelScope.launch {
+            while (isActive && _isListening.value) {
+                // Subtle undulating wave level so the orb and visualizer breathe with aliveness
+                val base = 0.22f + Random.nextFloat() * 0.28f
+                _audioLevel.value = base
+                delay(120)
+            }
+        }
+    }
+
+    private fun stopAlivenessPulse() {
+        pulseJob?.cancel()
+        pulseJob = null
     }
 
     fun startListening(context: Context) {
-        tts?.stop()
+        lastContext = context.applicationContext
+        voiceEngine?.stop()
         _isSpeaking.value = false
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "hi-IN")
-            putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "hi-IN")
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Boliye, Saathi sun raha hai...")
+        _isListening.value = true
+        _spokenText.value = if (isHindiLanguage) "साथी सुन रहा है..." else "Listening..."
+        startAlivenessPulse()
+
+        startListeningInternal(context)
+    }
+
+    private fun startListeningInternal(context: Context) {
+        try {
+            if (speechRecognizer == null) {
+                setupSpeechRecognizer(context)
+            }
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, if (isHindiLanguage) "hi-IN" else "en-IN")
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+            }
+            speechRecognizer?.startListening(intent)
+        } catch (_: Exception) {
+            _isListening.value = false
+            stopAlivenessPulse()
         }
-        speechRecognizer?.startListening(intent)
     }
 
     fun stopListening() {
-        speechRecognizer?.stopListening()
+        stopAlivenessPulse()
+        try {
+            speechRecognizer?.stopListening()
+        } catch (_: Exception) {}
         _isListening.value = false
+        _audioLevel.value = 0f
+    }
+
+    fun stopSpeaking() {
+        voiceEngine?.stop()
+        _isSpeaking.value = false
+        _audioLevel.value = 0f
+    }
+
+    fun dismissEmergencyDialer() {
+        _showEmergencyDialer112.value = false
     }
 
     fun processUserQuery(query: String) {
         viewModelScope.launch {
-            val lower = query.lowercase()
+            _showEmergencyDialer112.value = false
+            _isListening.value = false
+            stopAlivenessPulse()
 
-            // 1. Check for Scam / Police / CBI / Digital Arrest mentions
-            val scamAnalysis = repository.analyzeForScamSignals(query)
-            if (scamAnalysis.score >= 3 || lower.contains("police") || lower.contains("cbi") ||
-                lower.contains("ed") || lower.contains("giraftar") || lower.contains("arrest") ||
-                lower.contains("paise maang") || lower.contains("otp")) {
-                val reply = "Dhyan se suniye! Police, CBI ya court kabhi bhi phone par paise nahi maangte aur na hi video call par arrest karte hain. Yeh 100% scam hai. Foran phone kaat dijiye aur apne bachhon ko batayein."
-                _saathiResponse.value = reply
-                speakHindi(reply)
-                return@launch
+            val response = brain.reason(query)
+            _lastBrainResponse.value = response
+
+            val answerText = if (isHindiLanguage) response.spokenHindi else response.spokenEnglish
+            _saathiResponse.value = answerText
+
+            if (response.isEmergency) {
+                _showEmergencyDialer112.value = true
             }
 
-            // 2. Check for Medicine mentions in database
-            val medicines = repository.searchMedicines(query)
-            if (medicines.isNotEmpty()) {
-                val med = medicines.first()
-                val reply = "${med.brandName}: ${med.purposeHindi} Yeh lene ka tareeka: ${med.howToTakeHindi}. Jan Aushadhi mein yeh lagbhag ${med.janAushadhiMrp.toInt()} rupaye mein milti hai jabki branded ${med.brandMrp.toInt()} rupaye ki aati hai."
-                _saathiResponse.value = reply
-                speakHindi(reply)
-                return@launch
-            }
-
-            // 3. Common Elderly Health Queries
-            when {
-                lower.contains("khana") || lower.contains("khane ke") || lower.contains("pehle") || lower.contains("baad") -> {
-                    val reply = "Aamtaur par pet ki dawaai jaise Pan 40 ya Omez khali pet subah li jaati hai. Sugar aur BP ki dawaai aksar naashte ke baad ya khane ke saath li jaati hai. Dawaai scan karke Saathi se bilkul sahi niyam jaan sakte hain."
-                    _saathiResponse.value = reply
-                    speakHindi(reply)
-                }
-                lower.contains("duplicate") || lower.contains("ek hi") || lower.contains("dono") -> {
-                    val reply = "Jab do alag brand ki dawaai mein ek hi namak ya salt hota hai, jaise Glycomet aur Glucophage dono mein Metformin hota hai, dono saath lene se overdose ho sakta hai. Saathi mein patta scan karein, yeh turant alert deta hai."
-                    _saathiResponse.value = reply
-                    speakHindi(reply)
-                }
-                lower.contains("jan aushadhi") || lower.contains("sasti") || lower.contains("parchi") -> {
-                    val reply = "Pradhan Mantri Jan Aushadhi Kendra par vahi zaroori dawaai 50 se 90 percent saste daam par milti hai. Saathi app se Chemist Parchi banakar apne mohalle ke chemist ko dikha sakte hain."
-                    _saathiResponse.value = reply
-                    speakHindi(reply)
-                }
-                else -> {
-                    val reply = "Maine suna: \"$query\". Dawaai ka naam bolkar poochein (jaise Telma ya Metformin), ya koi notice / call ki jaankari lene ke liye poochein."
-                    _saathiResponse.value = reply
-                    speakHindi(reply)
-                }
-            }
+            voiceEngine?.speak(answerText)
         }
-    }
-
-    fun speakHindi(text: String) {
-        tts?.stop()
-        _isSpeaking.value = true
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "saathi_voice_guide")
-    }
-
-    fun stopSpeaking() {
-        tts?.stop()
-        _isSpeaking.value = false
     }
 
     override fun onCleared() {
         super.onCleared()
-        speechRecognizer?.destroy()
-        tts?.stop()
-        tts?.shutdown()
+        stopAlivenessPulse()
+        try {
+            speechRecognizer?.destroy()
+        } catch (_: Exception) {}
+        speechRecognizer = null
+        voiceEngine?.stop()
     }
 }

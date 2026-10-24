@@ -36,7 +36,7 @@ import com.saathi.app.ui.theme.RukoRedContainer
 import com.saathi.app.ui.theme.RukoOnRedContainer
 import com.saathi.app.ui.theme.SafeGreen
 import com.saathi.app.ui.theme.SafeGreenContainer
-import com.saathi.app.ui.medicine.CameraPreviewCard
+import com.saathi.app.ui.components.GuidedScannerView
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -214,52 +214,56 @@ fun DocumentScreen(
             }
         }
 
-        // ── RUKO MODE OVERLAY ────────────────────────────────────
-        // Full-screen, hard to dismiss — deliberately so.
+        // ── RUKO MODE OVERLAY (Section 4.3a) ────────────────────
         AnimatedVisibility(
             visible = rukoMode,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
+            val context = LocalContext.current
             RukoModeOverlay(
                 secondsRemaining = rukoSecondsRemaining,
-                dismissCode = dismissCode,
-                onDismissCodeChange = { dismissCode = it },
-                onAttemptDismiss = {
-                    if (dismissCode.uppercase() == "SAATHI") {
-                        viewModel.deactivateRukoMode()
-                        dismissCode = ""
-                    }
+                onCallFamily = {
+                    val intent = Intent(Intent.ACTION_DIAL)
+                    context.startActivity(intent)
+                },
+                onExitRukoMode = {
+                    viewModel.deactivateRukoMode()
                 }
             )
         }
     }
 
-    // Camera Dialog
+    // Section 9 Guided Live Scanner (No Shutter Button)
     if (showCamera) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { showCamera = false }) {
-            CameraPreviewCard(
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showCamera = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            GuidedScannerView(
                 onTextRecognized = { text ->
                     showCamera = false
                     viewModel.analyzeDocument(text)
                 },
+                onSpeakGuidance = { },
                 onDismiss = { showCamera = false }
             )
         }
     }
 }
 
-// ─── Ruko Mode Overlay ────────────────────────────────────────────
+// ─── Ruko Mode Overlay (Section 4.3a) ────────────────────────────
 
 @Composable
 fun RukoModeOverlay(
     secondsRemaining: Int,
-    dismissCode: String,
-    onDismissCodeChange: (String) -> Unit,
-    onAttemptDismiss: () -> Unit
+    onCallFamily: () -> Unit,
+    onExitRukoMode: () -> Unit
 ) {
     val minutesLeft = secondsRemaining / 60
     val secondsLeft = secondsRemaining % 60
+    val elapsedSeconds = 1800 - secondsRemaining
+    val canExitEarly = elapsedSeconds >= 60
 
     Box(
         modifier = Modifier
@@ -269,43 +273,49 @@ fun RukoModeOverlay(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            modifier = Modifier.padding(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Text("🛑", fontSize = 72.sp)
+            Text("🛑", fontSize = 64.sp)
             Text(
-                "RUKO!",
+                "PAUSE!",
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 56.sp,
+                fontSize = 48.sp,
                 color = Color.White
             )
             Text(
-                "KHATARA HAI",
+                "SAFETY PAUSE ACTIVATED",
                 fontWeight = FontWeight.Bold,
-                fontSize = 28.sp,
-                color = Color.White.copy(alpha = 0.9f)
+                fontSize = 20.sp,
+                color = Color.White.copy(alpha = 0.95f),
+                textAlign = TextAlign.Center
             )
 
-            Divider(color = Color.White.copy(alpha = 0.3f), modifier = Modifier.fillMaxWidth(0.8f))
+            Divider(color = Color.White.copy(alpha = 0.3f), modifier = Modifier.fillMaxWidth(0.85f))
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f)),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        "Saathi ne yeh document mein dhokha dhadi ke nishaan dekhe hain.",
-                        fontSize = 18.sp,
+                        "SevaCare detected high-risk scam markers in this notice or message.",
+                        fontSize = 17.sp,
                         color = Color.White,
                         textAlign = TextAlign.Center,
-                        lineHeight = 26.sp
+                        lineHeight = 24.sp
                     )
-                    Spacer(Modifier.height(12.dp))
                     Text(
-                        "Koi bhi paise mat bhejiye.",
+                        "Please stop. Do not send money. Let us call your family.",
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
@@ -316,49 +326,59 @@ fun RukoModeOverlay(
             Text(
                 text = String.format("%02d:%02d", minutesLeft, secondsLeft),
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 80.sp,
+                fontSize = 64.sp,
                 color = Color.White,
                 textAlign = TextAlign.Center
             )
             Text(
-                "Intezaar karein — Ghabrana mat",
-                fontSize = 18.sp,
-                color = Color.White.copy(alpha = 0.8f),
+                "30-Minute Cooling-Off Period",
+                fontSize = 15.sp,
+                color = Color.White.copy(alpha = 0.85f),
                 textAlign = TextAlign.Center
             )
 
-            Divider(color = Color.White.copy(alpha = 0.3f), modifier = Modifier.fillMaxWidth(0.8f))
+            Divider(color = Color.White.copy(alpha = 0.3f), modifier = Modifier.fillMaxWidth(0.85f))
 
-            // Dismiss code entry (makes it hard to close under panic)
-            Text(
-                "Bahar jaane ke liye \"SAATHI\" type karein:",
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-            OutlinedTextField(
-                value = dismissCode,
-                onValueChange = onDismissCodeChange,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                    focusedBorderColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedTextColor = Color.White,
-                    cursorColor = Color.White
-                ),
-                label = { Text("Type here", color = Color.White.copy(alpha = 0.7f)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(0.7f)
-            )
+            // Primary Action: Call Family (Biggest button)
             Button(
-                onClick = onAttemptDismiss,
+                onClick = onCallFamily,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
                     contentColor = RukoRed
                 ),
-                modifier = Modifier.height(56.dp).fillMaxWidth(0.7f)
+                shape = RoundedCornerShape(percent = 50),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
             ) {
-                Text("Bahar Jaayein", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Icon(Icons.Default.Phone, contentDescription = null, tint = RukoRed)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "Parivaar ko Call Karein",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = RukoRed
+                )
+            }
+
+            // Secondary Early Exit: Enabled only after 60 seconds of cooling off
+            OutlinedButton(
+                onClick = { if (canExitEarly) onExitRukoMode() },
+                enabled = canExitEarly,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color.White,
+                    disabledContentColor = Color.White.copy(alpha = 0.4f)
+                ),
+                shape = RoundedCornerShape(percent = 50),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = if (canExitEarly) "Maine parivaar se baat kar li hai" else "Rukiye (${60 - elapsedSeconds}s bache hain)",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -461,7 +481,7 @@ fun ScamDetectedCard(
             ) {
                 Icon(Icons.Default.Shield, contentDescription = null, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("RUKO MODE Activate Karein", style = MaterialTheme.typography.labelLarge)
+                Text("Activate Pause Protection", style = MaterialTheme.typography.labelLarge)
             }
         }
     }

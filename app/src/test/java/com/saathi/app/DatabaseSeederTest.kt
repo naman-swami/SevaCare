@@ -1,30 +1,28 @@
 package com.saathi.app
 
 import com.saathi.app.data.db.DatabaseSeeder
-import org.junit.Assert.*
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Validates integrity and completeness of pre-seeded clinical and scam databases.
+ * Validates integrity and completeness of pre-seeded clinical and scam databases (SevaCare Upgrade Brief v2).
+ * Verifies that zero hardcoded prices exist in core models per Section 3.
  */
 class DatabaseSeederTest {
 
     @Test
     fun testMedicinesDatabaseIntegrity() {
         val meds = DatabaseSeeder.medicines
-        assertTrue("Database should have substantial medicine catalog", meds.size >= 50)
+        assertTrue("Database must have at least 300 common Indian brands per Section 8", meds.size >= 300)
 
         meds.forEach { med ->
             assertTrue("Brand name should not be blank", med.brandName.isNotBlank())
             assertTrue("Generic salt should not be blank for ${med.brandName}", med.genericSalt.isNotBlank())
             assertTrue("Purpose in Hindi should not be blank for ${med.brandName}", med.purposeHindi.isNotBlank())
             assertTrue("How to take in Hindi should not be blank for ${med.brandName}", med.howToTakeHindi.isNotBlank())
-            assertTrue("Brand MRP should be positive for ${med.brandName}", med.brandMrp > 0f)
-            assertTrue("Jan Aushadhi MRP should be positive for ${med.brandName}", med.janAushadhiMrp > 0f)
-            assertTrue(
-                "Jan Aushadhi price should be lower or equal to brand MRP for ${med.brandName}",
-                med.janAushadhiMrp <= med.brandMrp
-            )
+            assertTrue("Schedule class should not be blank for ${med.brandName}", med.scheduleClass.isNotBlank())
+            assertTrue("Category should not be blank for ${med.brandName}", med.category.isNotBlank())
+            assertTrue("Normalized salt should not be blank for ${med.brandName}", med.normalizedSalt.isNotBlank())
         }
     }
 

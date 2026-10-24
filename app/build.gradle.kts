@@ -78,6 +78,10 @@ dependencies {
     // ML Kit Text Recognition — Latin + Devanagari (bundled, no network, no API key)
     implementation(libs.mlkit.text.recognition)
     implementation(libs.mlkit.text.recognition.devanagari)
+    implementation(libs.mlkit.barcode.scanning)
+
+    // WorkManager (for background sync & expiry tracking)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Coil (for displaying scanned-image preview)
     implementation(libs.coil.compose)

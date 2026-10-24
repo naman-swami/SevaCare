@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.saathi.app.ui.components.GuidedScannerView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.mlkit.vision.common.InputImage
@@ -250,10 +252,10 @@ fun MedicineScreen(
                         Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.SearchOff, contentDescription = null, modifier = Modifier.size(48.dp))
                             Spacer(Modifier.height(8.dp))
-                            Text("Yeh dawaai nahi mili", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            Text("OCR mein mila: \"${state.ocrText.take(50)}...\"", fontSize = 14.sp, textAlign = TextAlign.Center)
+                            Text("Medicine Not Recognized", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                            Text("OCR detected: \"${state.ocrText.take(50)}...\"", fontSize = 14.sp, textAlign = TextAlign.Center)
                             Spacer(Modifier.height(8.dp))
-                            Text("Upar search box mein naam type karein.", textAlign = TextAlign.Center)
+                            Text("Please verify with your pharmacist or type the name in the search box above.", textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -268,10 +270,10 @@ fun MedicineScreen(
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             Spacer(Modifier.height(12.dp))
-                            Text("Dawaai ka patta scan karein", fontWeight = FontWeight.Bold, fontSize = 22.sp,
+                            Text("Scan Medicine Strip", fontWeight = FontWeight.Bold, fontSize = 22.sp,
                                 textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             Spacer(Modifier.height(8.dp))
-                            Text("Ya neeche search box mein naam type karein",
+                            Text("Position strip inside frame or type medicine name in the search box above",
                                 textAlign = TextAlign.Center, fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
@@ -288,13 +290,19 @@ fun MedicineScreen(
         }
     }
 
-    // ── Camera Dialog ─────────────────────────────────────────────
+    // ── Section 9 Guided Live Scanner (No Shutter Button) ─────────
     if (showCamera) {
-        Dialog(onDismissRequest = { showCamera = false }) {
-            CameraPreviewCard(
+        Dialog(
+            onDismissRequest = { showCamera = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            GuidedScannerView(
                 onTextRecognized = { text ->
                     showCamera = false
                     viewModel.onOcrTextReceived(text)
+                },
+                onSpeakGuidance = { text ->
+                    viewModel.speakHindi(text)
                 },
                 onDismiss = { showCamera = false }
             )
@@ -310,9 +318,10 @@ fun MedicineDetailCard(
     disclosureStep: DisclosureStep,
     onNextStep: () -> Unit,
     onSpeak: (String) -> Unit,
-    onShareParchi: () -> Unit
+    onShareParchi: () -> Unit,
+    onFindOnline: () -> Unit = {}
 ) {
-    val savings = medicine.brandMrp - medicine.janAushadhiMrp
+    var showPurpose by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -327,7 +336,7 @@ fun MedicineDetailCard(
                 Spacer(Modifier.width(8.dp))
                 Column {
                     Text(medicine.brandName, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = SafeGreen)
-                    Text(medicine.genericSalt, fontSize = 14.sp, color = SafeGreen.copy(alpha = 0.7f))
+                    Text("${medicine.genericSalt} • ${medicine.dosageForm}", fontSize = 14.sp, color = SafeGreen.copy(alpha = 0.8f))
                 }
             }
 
@@ -335,52 +344,40 @@ fun MedicineDetailCard(
 
             // Schedule class badge
             val (badgeColor, badgeText) = when (medicine.scheduleClass) {
-                "H1" -> Pair(MaterialTheme.colorScheme.error, "⚠️ Prescription Required")
-                "H" -> Pair(DuplicateAmber, "Rx — Doctor's Prescription")
+                "H1" -> Pair(MaterialTheme.colorScheme.error, "⚠️ Prescription Required (Schedule H1)")
+                "H" -> Pair(DuplicateAmber, "Rx — Doctor's Prescription (Schedule H)")
                 "OTC" -> Pair(SafeGreen, "✅ OTC — Bina prescription ke milti hai")
-                else -> Pair(SafeGreen, medicine.scheduleClass)
+                else -> Pair(SafeGreen, "Schedule: ${medicine.scheduleClass}")
             }
+            Text(badgeText, color = badgeColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
 
-            // Purpose
-            Text("Kya kaam karti hai:", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-            Text(medicine.purposeHindi, fontSize = 18.sp, lineHeight = 26.sp)
-
-            // How to take
-            Text("Kaise leni hai:", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            // How to take (Safe label dosage timing)
+            Text("Kaise leni hai (Timing):", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             Text(medicine.howToTakeHindi, fontSize = 18.sp, lineHeight = 26.sp)
 
             Divider(color = SafeGreen.copy(alpha = 0.2f))
 
-            // Price comparison
-            Text("💰 Sasta Alternative:", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("Brand price:", fontSize = 14.sp)
-                    Text("₹${medicine.brandMrp.toInt()}", fontWeight = FontWeight.Bold, fontSize = 22.sp,
-                        color = MaterialTheme.colorScheme.error)
-                }
-                Icon(Icons.Default.ArrowForward, contentDescription = null,
-                    modifier = Modifier.align(Alignment.CenterVertically))
-                Column {
-                    Text("Jan Aushadhi:", fontSize = 14.sp)
-                    Text("₹${medicine.janAushadhiMrp.toInt()}", fontWeight = FontWeight.Bold, fontSize = 22.sp,
-                        color = SafeGreen)
-                }
-                Column {
-                    Text("Bachat:", fontSize = 14.sp)
-                    Text("₹${savings.toInt()}", fontWeight = FontWeight.Bold, fontSize = 22.sp,
-                        color = SafeGreen)
+            // Gentle Disclosure for Purpose (Section 8 Item 5)
+            Text("Kya kaam karti hai:", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            if (showPurpose) {
+                Text(medicine.purposeHindi, fontSize = 18.sp, lineHeight = 26.sp)
+            } else {
+                OutlinedButton(
+                    onClick = { showPurpose = true },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Doctor ne kis cheez ke liye diya? (Tap to reveal)", fontSize = 14.sp)
                 }
             }
+
+            Divider(color = SafeGreen.copy(alpha = 0.2f))
 
             // Action Buttons
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 // TTS
                 OutlinedButton(
-                    onClick = { onSpeak(medicine.purposeHindi + " " + medicine.howToTakeHindi) },
+                    onClick = { onSpeak((if (showPurpose) medicine.purposeHindi + " " else "") + medicine.howToTakeHindi) },
                     modifier = Modifier.weight(1f).height(56.dp)
                 ) {
                     Icon(Icons.Default.VolumeUp, contentDescription = null)
@@ -397,6 +394,15 @@ fun MedicineDetailCard(
                     Spacer(Modifier.width(4.dp))
                     Text("Parchi")
                 }
+            }
+
+            // Online Price Finder Button (Section 13)
+            OutlinedButton(
+                onClick = onFindOnline,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("🌐 Find this medicine online", fontSize = 14.sp)
             }
 
             // 5-Step Disclosure Progress
@@ -523,7 +529,7 @@ fun SessionSummaryCard(medicines: List<Medicine>) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Is Session Mein Scan Ki Gayi Dawaaiyan (${medicines.size})",
+            Text("Medicines Scanned This Session (${medicines.size})",
                 fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
             medicines.forEach { med ->
@@ -536,115 +542,4 @@ fun SessionSummaryCard(medicines: List<Medicine>) {
     }
 }
 
-// ─── Camera Preview ───────────────────────────────────────────────
 
-@Composable
-fun CameraPreviewCard(
-    onTextRecognized: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val imageCapture = remember { ImageCapture.Builder().build() }
-    val executor = remember { Executors.newSingleThreadExecutor() }
-    var isProcessing by remember { mutableStateOf(false) }
-
-    // ML Kit recognizers — both Latin and Devanagari
-    val latinRecognizer = remember { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
-    val devanagariRecognizer = remember { TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build()) }
-
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(480.dp)
-    ) {
-        Box {
-            // Camera preview
-            AndroidView(
-                factory = { ctx ->
-                    val previewView = PreviewView(ctx)
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                    cameraProviderFuture.addListener({
-                        val cameraProvider = cameraProviderFuture.get()
-                        val preview = Preview.Builder().build().also {
-                            it.surfaceProvider = previewView.surfaceProvider
-                        }
-                        try {
-                            cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
-                                lifecycleOwner,
-                                CameraSelector.DEFAULT_BACK_CAMERA,
-                                preview,
-                                imageCapture
-                            )
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }, ContextCompat.getMainExecutor(ctx))
-                    previewView
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-
-            // Overlay buttons
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (isProcessing) {
-                    CircularProgressIndicator(color = Color.White)
-                    Text("Scan ho raha hai...", color = Color.White)
-                } else {
-                    Button(
-                        onClick = {
-                            isProcessing = true
-                            imageCapture.takePicture(executor,
-                                object : ImageCapture.OnImageCapturedCallback() {
-                                    override fun onCaptureSuccess(image: ImageProxy) {
-                                        val inputImage = InputImage.fromMediaImage(
-                                            image.image!!,
-                                            image.imageInfo.rotationDegrees
-                                        )
-                                        // Run both Latin and Devanagari recognizers
-                                        latinRecognizer.process(inputImage)
-                                            .addOnSuccessListener { latinResult ->
-                                                devanagariRecognizer.process(inputImage)
-                                                    .addOnSuccessListener { devResult ->
-                                                        val combinedText = latinResult.text + "\n" + devResult.text
-                                                        image.close()
-                                                        onTextRecognized(combinedText)
-                                                    }
-                                                    .addOnFailureListener {
-                                                        image.close()
-                                                        onTextRecognized(latinResult.text)
-                                                    }
-                                            }
-                                            .addOnFailureListener {
-                                                image.close()
-                                                isProcessing = false
-                                            }
-                                    }
-                                    override fun onError(exception: ImageCaptureException) {
-                                        isProcessing = false
-                                    }
-                                }
-                            )
-                        },
-                        modifier = Modifier.height(64.dp).fillMaxWidth(0.7f)
-                    ) {
-                        Icon(Icons.Default.Camera, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Scan Karein", style = MaterialTheme.typography.labelLarge)
-                    }
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth(0.7f)) {
-                        Text("Wapas Jaayein", color = Color.White)
-                    }
-                }
-            }
-        }
-    }
-}

@@ -1,6 +1,7 @@
 *.iml
 .gradle
 /local.properties
+/.idea/
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -16,3 +17,31 @@ local.properties
 /app/build
 *.apk
 *.aab
+/website/
+website/
+
+# Ignore document folders, scratch files, and helper scripts
+doc/
+*.pdf
+*.py
+*.bat
+ai model/
+output_animations/
+.agents/
+.kotlin/
+__pycache__/
+
+# Ignore extra markdown documentation (README.md is the only documentation file to keep)
+ASSET_INVENTORY.md
+ASSET_PROMPTS.md
+DECISIONS.md
+DEMO_SCRIPT.md
+LICENSES.md
+ORIGINAL_REQUEST.md
+PERF.md
+PROGRESS.md
+RESEARCH_NOTES.md
+RESEARCH_NOTES_TRIPO.md
+SUBMISSION_STORY.md
+TESTING.md
+UPGRADE_DOCUMENT.md

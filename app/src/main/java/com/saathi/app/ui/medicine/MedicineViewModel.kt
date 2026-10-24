@@ -165,7 +165,7 @@ class MedicineViewModel(
 
     fun completeDisclosure() {
         _disclosureStep.value = DisclosureStep.COMPLETE
-        speakHindi("Bahut achha! Saathi ne aapki madad ki. Dhyan rakhna.")
+        speakHindi("Review complete. SevaCare is always here to help.")
     }
 
     // ─── Manual Search ───────────────────────────────────────────
@@ -223,28 +223,26 @@ class MedicineViewModel(
      * This bridges the digital-offline gap that no current health app addresses.
      */
     fun generateAndShareChemistParchi(context: Context, medicine: Medicine) {
-        val savings = medicine.brandMrp - medicine.janAushadhiMrp
-
         // Create bitmap
         val width = 900
         val height = 520
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // Background — soft cream from logo
-        val bgPaint = Paint().apply { color = android.graphics.Color.parseColor("#FBF6EC") }
+        // Background — soft cream (#FFF8EC)
+        val bgPaint = Paint().apply { color = android.graphics.Color.parseColor("#FFF8EC") }
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-        // Border — brand teal from shield
+        // Border — Deep Teal (#0F6B5C)
         val borderPaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#0E5C63")
+            color = android.graphics.Color.parseColor("#0F6B5C")
             style = Paint.Style.STROKE
             strokeWidth = 8f
         }
         canvas.drawRect(14f, 14f, (width - 14).toFloat(), (height - 14).toFloat(), borderPaint)
 
         val headerPaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#0E5C63")
+            color = android.graphics.Color.parseColor("#0F6B5C")
             textSize = 42f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
@@ -261,13 +259,13 @@ class MedicineViewModel(
             isAntiAlias = true
         }
         val greenPaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#2E6930")
-            textSize = 40f
+            color = android.graphics.Color.parseColor("#0F6B5C")
+            textSize = 36f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
         val subtlePaint = Paint().apply {
-            color = android.graphics.Color.parseColor("#0E5C63")
+            color = android.graphics.Color.parseColor("#0B4F44")
             textSize = 28f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
@@ -288,24 +286,24 @@ class MedicineViewModel(
         canvas.drawText("📋 CHEMIST PARCHI", 50f, 80f, headerPaint)
         canvas.drawLine(40f, 110f, (width - 160).toFloat(), 110f, borderPaint.apply { strokeWidth = 2f })
 
-        canvas.drawText("Bhaiya, yeh dena:", 50f, 165f, bodyPaint)
-        canvas.drawText("${medicine.janAushadhiName}", 50f, 225f, boldPaint)
+        canvas.drawText("Pharmacist Note: Please dispense this medicine or equivalent generic salt:", 50f, 165f, bodyPaint)
+        canvas.drawText("${medicine.brandName} (${medicine.dosageForm})", 50f, 225f, boldPaint)
 
         canvas.drawLine(40f, 255f, (width - 40).toFloat(), 255f, Paint().apply {
             color = android.graphics.Color.parseColor("#D4EFF2")
             strokeWidth = 2f
         })
 
-        canvas.drawText("Brand: ₹${medicine.brandMrp.toInt()} → Jan Aushadhi: ₹${medicine.janAushadhiMrp.toInt()}", 50f, 315f, bodyPaint)
-        canvas.drawText("Bachat: ₹${savings.toInt()} per patta", 50f, 375f, greenPaint)
+        canvas.drawText("Active Salt: ${medicine.genericSalt}", 50f, 315f, greenPaint)
+        canvas.drawText("Schedule: ${medicine.scheduleClass} • Category: ${medicine.category}", 50f, 375f, bodyPaint)
 
         canvas.drawLine(40f, 405f, (width - 40).toFloat(), 405f, Paint().apply {
             color = android.graphics.Color.parseColor("#D4EFF2")
             strokeWidth = 2f
         })
 
-        canvas.drawText("Jan Aushadhi Kendra se maangein", 50f, 455f, bodyPaint)
-        canvas.drawText("साथी • Powered by Saathi App", 50f, 500f, subtlePaint)
+        canvas.drawText("Jan Aushadhi ya standard generic substitute dein", 50f, 455f, bodyPaint)
+        canvas.drawText("सेवाकेयर • Powered by SevaCare", 50f, 500f, subtlePaint)
 
         // Save to cache and share
         try {
@@ -325,7 +323,7 @@ class MedicineViewModel(
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_TEXT, "Saathi App se Chemist Parchi — ${medicine.brandName}")
+                putExtra(Intent.EXTRA_TEXT, "SevaCare App se Chemist Parchi — ${medicine.brandName}")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(Intent.createChooser(shareIntent, "Parchi Share Karein"))

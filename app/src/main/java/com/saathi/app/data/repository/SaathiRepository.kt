@@ -23,6 +23,33 @@ class SaathiRepository(
         medicineDao.findByBrandName(brandName)
 
     /**
+     * Matches OCR text against known medicines.
+     * Rejects empty/boilerplate scans; matches verified brand or active salt roots.
+     */
+    suspend fun matchMedicineFromOcr(ocrText: String): Medicine? {
+        if (ocrText.isBlank()) return null
+        val clean = ocrText.lowercase().trim()
+        val all = medicineDao.getAllMedicines()
+
+        // 1. Try brand matching
+        for (med in all) {
+            val brand = med.brandName.lowercase().trim()
+            if (clean.contains(brand)) {
+                return med
+            }
+        }
+
+        // 2. Try generic salt matching if distinct
+        for (med in all) {
+            val salt = med.normalizedSalt.lowercase().trim()
+            if (salt.length >= 6 && clean.contains(salt)) {
+                return med
+            }
+        }
+        return null
+    }
+
+    /**
      * The core Duplicate Pill Alert check.
      * Given the salt of a newly-scanned medicine, check if any previously-scanned
      * salt in this session is the same (or a superset that contains it).
